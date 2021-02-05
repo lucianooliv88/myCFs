@@ -55,13 +55,7 @@ Resources:
             #cp -r /usr/local/tomcat/webapps.dist/* /usr/local/tomcat/webapps
             #docker ps -a to list and dock rm container ID to remove it 
             
-            #adding monitoting hits into my webservers available on http://webserver/status.html cathing the /server-status
-            cd /etc/httpd/conf
-            mv httpd.conf httpd.conf.old
-            aws s3 cp s3://my-automations/httpd.conf
-            aws s3 cp s3://my-automations/status.html /var/www/html
-            service httpd restart
-            
+                       
       BlockDeviceMappings:
       - DeviceName: "/dev/xvda"
         Ebs:
