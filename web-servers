@@ -1,0 +1,151 @@
+---
+Description: Create an EC2 instances using AWS CloudFormation, installing Apache, a webpage and SSM agent installation.
+#I am using mapping then I could use the same AMI for multiple EC2s and same SG
+"Parameters" : {
+"SecurityGroupId" : {
+      "Type" : "String",
+      "Description" : "The SecurityGroupId of an existing EC2 SecurityGroup in your Virtual Private Cloud (VPC)"
+    }
+    }
+Mappings:
+  AmiMap:
+    EC2instance01:
+      id: "ami-0fc970315c2d38f01" #Select the lastest AMI ID from EC2 launch quick start
+  KeyPair:
+    Key01:
+      key02: "green-blue" #keypair name should be here
+Resources:
+#  SecurityGroupCFtest: #creating SecurityGroup
+#    Type: AWS::EC2::SecurityGroup
+#    Properties:
+#      GroupName: CFtest
+#      SecurityGroupIngress:
+#      - IpProtocol: tcp
+#        FromPort: 22
+#        ToPort: 22
+#        CidrIp: 0.0.0.0/0
+#      - IpProtocol: tcp
+#        FromPort: 80
+#        ToPort: 80
+#        CidrIp: 0.0.0.0/0
+#        Description: For traffic from Internet
+#      GroupDescription: Security Group for CF demo
+#      VpcId: "vpc-8aed14f3" #VPC ID
+  #EC2 instance node server 1
+  EC2InstanceCFtest1:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: "eu-west-1a"
+      "SecurityGroupIds" : [{ "Ref" : "SecurityGroupId" }]
+      IamInstanceProfile: "EC2InstanceProfile"
+      UserData: #we can do use userdata for everything install apache, copy config files from s3 bucket for example, ETC.
+        'Fn::Base64':
+          !Sub |
+            #!/bin/bash
+            #updating OS
+            yum update -y
+            #installing apache
+            yum install httpd -y
+            #starting apach2
+            service httpd start
+            chkconfig httpd on
+            #deploying a webpage 
+            cd /var/www/html
+            echo "<html><h1>Hello! Luciano here!AvailabilityZone-A</h1><img src="https://i2.wp.com/eatrio.net/wp-content/uploads/2012/11/jaguarbrasilia1.jpg"></html>"  >  index.html
+            #installing ssm agent to SSH via brownser. It needs role with SSM permissions here I am using all permissions into EC2InstanceProfile role
+            yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+            systemctl enable amazon-ssm-agent
+            systemctl start amazon-ssm-agent
+            #Installing tomcat using docker 
+            yum install docker -y
+            # start docker services
+            service docker start
+            #installing tomcat image for the docker
+            docker pull tomcat:7.0.107-jdk8-adoptopenjdk-openj9
+            #runing the docker image and creating the contanier
+            docker run --name tomcat-container -p 8080:8080 tomcat:latest
+            #ignore this is my ansible
+            #wait app load
+            #name: Pause for 120 seconds to build container
+            #pause:
+            #seconds: 120
+            #if it below failed check manually if the contanier are running and the app is on docker exec -it tomcat-container /bin/bash using ls webapps folder
+            #docker exec -it tomcat-container /bin/bash
+            #cp -r /usr/local/tomcat/webapps.dist/* /usr/local/tomcat/webapps
+            #docker ps -a to list and dock rm container ID to remove it 
+            
+      BlockDeviceMappings:
+      - DeviceName: "/dev/xvda"
+        Ebs:
+          DeleteOnTermination: 'true'
+          VolumeSize: '8'
+          VolumeType: gp2
+      ImageId:
+        Fn::FindInMap:
+        - AmiMap
+        - EC2instance01
+        - id
+      InstanceType: "t2.micro"
+      Tags:
+        - Key: Name
+          Value: server1
+      KeyName:
+        Fn::FindInMap:
+        - KeyPair
+        - Key01
+        - key02
+#      NetworkInterfaces:
+#      - Description: "Primary network interface"
+#        DeviceIndex: "0"
+#        SubnetId: "subnet-ea91e5b0"
+#        AssociatePublicIpAddress: "true"
+#        GroupSet:
+#        - Ref: SecurityGroupCFtest
+
+   #EC2 instance node server 2
+  EC2InstanceCFtest2:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: "eu-west-1c"
+      "SecurityGroupIds" : [{ "Ref" : "SecurityGroupId" }]
+      IamInstanceProfile: "EC2InstanceProfile"
+      UserData:
+        'Fn::Base64':
+          !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install httpd -y
+            service httpd start
+            chkconfig httpd on
+            cd /var/www/html
+            echo "<html><h1>Hello! Luciano here!AvailabilityZone-C</h1><img src="https://i2.wp.com/eatrio.net/wp-content/uploads/2012/11/jaguarbrasilia1.jpg"></html>"  >  index.html
+            yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+            systemctl enable amazon-ssm-agent
+            systemctl start amazon-ssm-agent
+      BlockDeviceMappings:
+      - DeviceName: "/dev/xvda"
+        Ebs:
+          DeleteOnTermination: 'true'
+          VolumeSize: '8'
+          VolumeType: gp2
+      ImageId:
+        Fn::FindInMap:
+        - AmiMap
+        - EC2instance01
+        - id
+      InstanceType: "t2.micro"
+      Tags:
+        - Key: Name
+          Value: server2
+      KeyName:
+        Fn::FindInMap:
+        - KeyPair
+        - Key01
+        - key02
+#      NetworkInterfaces:
+#      - Description: "Primary network interface"
+#        DeviceIndex: "0"
+#        SubnetId: "subnet-f9cff5b1"
+#        AssociatePublicIpAddress: "true"
+#        GroupSet:
+#        - Ref: SecurityGroupCFtest
