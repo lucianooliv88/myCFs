@@ -1,5 +1,5 @@
 ---
-Description: Create an EC2 instances using AWS CloudFormation, installing Apache, a webpage and SSM agent installation.
+Description: Create an EC2 instances using AWS CloudFormation, installing Apache, a webpage, docker with tomcat image and SSM agent installation.
 #I am using mapping then I could use the same AMI for multiple EC2s and same SG
 "Parameters" : {
 "SecurityGroupId" : {
