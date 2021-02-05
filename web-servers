@@ -49,11 +49,6 @@ Resources:
             docker pull tomcat:7.0.107-jdk8-adoptopenjdk-openj9
             #runing the docker image and creating the contanier
             docker run --name tomcat-container -p 8080:8080 tomcat:latest
-            #ignore this is my ansible
-            #wait app load
-            #name: Pause for 120 seconds to build container
-            #pause:
-            #seconds: 120
             #if it below failed check manually if the contanier are running and the app is on docker exec -it tomcat-container /bin/bash using ls webapps folder
             #docker exec -it tomcat-container /bin/bash
             #cp -r /usr/local/tomcat/webapps.dist/* /usr/local/tomcat/webapps
